@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airlines with Most Flights</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin: 10px 0 10px 0;
+            font-size: 24px;
+        }
+        #chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 100px); 
+        }
+        .bar {
+            fill: steelblue;
+            transition: fill 0.3s;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 5px 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            visibility: hidden;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Airlines with Most Flights (Boston)</h1>
+    <div id="chart-container">
+        <svg id="chart" width="800" height="500"></svg>
+    </div>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        d3.csv("boston_flights.csv").then(data => {
+            const filteredData = data.filter(d => d.carrier_lg && d.carrier_lg.trim() !== "");
+
+            const groupedData = Array.from(
+                d3.rollup(filteredData, v => v.length, d => d.carrier_lg),
+                ([carrier, count]) => ({ carrier, count })
+            );
+
+            const threshold = 50;
+            let otherCount = 0;
+            const processedData = groupedData.filter(d => {
+                if (d.count < threshold) {
+                    otherCount += d.count;
+                    return false;
+                }
+                return true;
+            });
+
+            if (otherCount > 0) {
+                processedData.push({ carrier: "Other", count: otherCount });
+            }
+
+            processedData.sort((a, b) => b.count - a.count);
+
+            const svgWidth = 800, svgHeight = 500;
+            const margin = { top: 20, right: 20, bottom: 70, left: 60 };
+            const width = svgWidth - margin.left - margin.right;
+            const height = svgHeight - margin.top - margin.bottom;
+
+            const svg = d3.select("#chart")
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const tooltip = d3.select("#tooltip");
+
+            const x = d3.scaleBand()
+                .domain(processedData.map(d => d.carrier))
+                .range([0, width])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(processedData, d => d.count)]).nice()
+                .range([height, 0]);
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "rotate(-45)")
+                .style("text-anchor", "end");
+
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + 50)
+                .attr("text-anchor", "middle")
+                .text("Airline Carriers");
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -45)
+                .attr("text-anchor", "middle")
+                .text("Number of Flights");
+
+            const minBarHeight = 5;
+
+            svg.selectAll(".bar")
+                .data(processedData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(d.carrier))
+                .attr("y", d => Math.min(y(d.count), height - minBarHeight))
+                .attr("width", x.bandwidth())
+                .attr("height", d => Math.max(height - y(d.count), minBarHeight))
+                .on("mouseover", (event, d) => {
+                    tooltip.style("visibility", "visible")
+                        .text(`Carrier: ${d.carrier}, Flights: ${d.count}`);
+                })
+                .on("mousemove", event => {
+                    tooltip.style("top", `${event.pageY - 20}px`)
+                        .style("left", `${event.pageX + 10}px`);
+                })
+                .on("mouseout", () => tooltip.style("visibility", "hidden"));
+        }).catch(error => console.error("Error loading data:", error));
+    </script>
+</body>
+</html>

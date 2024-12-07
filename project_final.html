@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Comparative Analysis of Boston Flight Data - Group 19</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 60%;
+            margin: auto;
+            padding: 20px;
+        }
+        .title, .introduction, .chart-description, .conclusion {
+            margin-bottom: 20px;
+        }
+        .charts {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 20px;
+            margin-bottom: 20px;
+        }
+        .chart {
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            text-align: left;
+        }
+        #chart-container { width: 75%; height: 700px; }
+        #chart2-container { width: 70%; height: 635px; }
+        #chart3-container { width: 45%; height: 400px; }
+        #chart4-container { width: 60%; height: 400px; }
+        #chart5-container { width: 30%; height: 400px; }
+        #chart6-container { width: 70%; height: 600px}
+        
+        .tooltip {
+            position: absolute;
+            padding: 5px 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            visibility: hidden;
+            white-space: nowrap;
+        }
+            .bar {
+            fill: steelblue;
+            transition: fill 0.3s;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Section -->
+        <div class="title">
+            <h1>A Comparative Analysis of Boston Flight Data from 2018 to 2023</h1>
+        </div>
+        
+        <!-- Introduction Section -->
+        <div class="introduction">
+            <h2>Background:</h2>
+            <p>
+                This project seeks to contextualize and visualize the impact of the pandemic 
+                on companies in the airline industry and the overall changes in consumer demand. 
+                It seeks to do so by analyzing the number of flights and routes over each quarter, 
+                which carriers are more common for a certain route, what fares passengers paid, 
+                distances travelled for each route, and the overall number of passengers per quarter. 
+                It is important to do so because it helps to efficiently communicate and depict complex 
+                flight trends over a vast amount of time and how exogenous variables like changes in policies 
+                and guidelines can impact the sector. Given that flights are a primary mode of transportation 
+                connecting people across vast distances, it is fascinating to observe shifts in human behavior 
+                and the domestic response to major disruptions like a pandemic. Additionally, visualizing the 
+                recovery of these networks across regions and routes reveals how such events influence 
+                macroeconomic trends and reshape domestic interactions. 
+            </p>
+        </div>
+
+        <!-- Introduction Section -->
+        <div class="introduction">
+            <h2>Our Dataset:</h2>
+            <p><a href="https://www.kaggle.com/datasets/bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024/data ">US Airline Flight Routes and Fares 1993 – 2024</a></p>
+            <p>
+                The dataset we will use is the ‘US Airline Flight Routes and Fares 1993 – 2024.’  
+                In this dataset, we primarily focused on analyzing the financial data, passenger data, and time data. 
+                The overall column variables include a table identifier, year, quarter, origin city market 
+                ID, destination city market ID, origin city, destination city, origin airport ID, 
+                destination airport ID, origin airport code, destination airport code, distance 
+                between airport, number of passengers, average fare, the largest carrier by passengers, 
+                and market share of the largest carrier. This is a large dataset, having 23 columns 
+                and containing 63.04 MB of data. The dataset we have chosen includes nearly 250,000 rows of data. When 
+                dealing with a platform like GitHub, that is simply too much data to parse through. 
+                Additionally, we were not concerned with gathering data from 1993-2024, rather we were 
+                concerned with data that allowed us to view the effects of the Covid-19 pandemic on Boston's airline industry. 
+                We took less than 5% of this dataset to focus on the years 2018 to 2023, 
+                parsing the data to include only rows that include those dates. Additionally, 
+                since we were only looking at flights that departed from Boston, we removed 
+                all rows that did not include a departure from the Boston metropolitan area. We 
+                obtained this dataset from Kaggle. The only missing data is some of the geolocation 
+                data, which wasn't as necessary in graphs because the city name data was included. 
+            </p>
+        </div>
+
+
+        <!-- Tasks Section -->
+        <div class="tasks">
+            <h2>Tasks:</h2>
+            <p>
+                Now that we have summarized how we worked with the data, here are some of the steps we took to clean the data:
+                <ul>
+                    <li>Removed unnecessary columns from the dataset</li>
+                    <li>Filtered the data for all years aside from 2018-2023, and deleted these rows</li>
+                    <li>Filtered the data for all flights that did not depart from the Boston metropolitan area, and deleted those rows</li>
+                    <li>Added an additional column for airline, which used a legend to relate the airline code to their full name</li>
+                    <li>Parsed through the dataset, removing "(Metropolitan Area)" which was present after several major cities, so that the cities would populate on our visualizations</li>
+                </ul>
+            </p>
+
+            <p>
+                With the data clean, here is what we were looking to do with the data:
+                <ul>
+                    <li>Visualize changes in customer demand over time for air travel through trends and variability in fares charged and number of flights</li>
+                    <li>Evaluate which airlines have the most amount of passengers and any detectable behaviors in fares charged and market share</li>
+                    <li>Create a map showing which destination cities are most popular to visit and evaluate and compare the passenger volume passengers traveling to each city</li>
+                    <li>Observe any noticeable trends that COVID-19 might have played out on different variables such as miles traveled, fares charged, passengers on flights, and carrier volumes</li>
+                </ul>
+            </p>
+        </div>
+        
+        <!-- Charts Subheader Section -->
+            
+<div class="charts-subheader">
+            <h2>Visualizing Flight Data Geographically</h2>
+        </div>
+        
+        <!-- Charts Section -->
+<div class="charts">
+            
+            <!-- Chart 1 -->
+            <div class="chart">
+                
+                <div id="chart-container"></div>
+            </div>
+            <div class="chart-description">
+                <p>This chart is a map of the United States, highlighting cities and states that had the highest volume of passengers in the years 2018-2023. The scale on the right side represents the volume of passengers that flew on an airline from Boston, MA to a particular state. States like Florida and California have well over 100,000 passengers who have flown into their states from Boston, whereas states like Montana and Kentucky only have a few thousand passengers who flew from Boston in that period. It is important to note that this dataset includes only about a dozen airlines, therefore there may be states or routes that are not included.</p>
+                <p>The blue spots on the chart represent hotspots for flights, noting the cities within each state that flights from Boston arrive at. Larger spots are representative of a higher volume of passengers. Looking at the data, it appears that some of the most popular destinations include Orlando, Los Angeles, San Francisco, Chicago, Washington DC, New York City, and Denver, among others.</p>
+            </div>
+<div class="charts-subheader">
+            <h2>Visualizing Carrier Data by Passenger, Fare, Miles, and Market Share</h2>
+        </div>
+            <!-- Chart 2 -->
+            <div class="chart">
+                
+                <div id="chart2-container"></div>
+            </div>
+            <div class="chart-description">
+                <p>This graph displays the airlines with the most flights in Boston. From the graph, the two airlines, represented as "WN" (Southwest Airlines) and "AA" (American Airlines), dominate the market with the highest number of flights, exceeding the other carriers. "WN" leads with approximately 1,600 flights, closely followed by "AA" with around 1,400 flights. Other carriers, such as "B6" (JetBlue Airways), "DL" (Delta Air Lines), and "UA" (United Airlines), have considerably fewer flights, with numbers ranging from about 400 to 800, indicating they have a notable but not much compared to "WN" or "AA". Several other carriers are also present, such as "AS" (Alaska Airlines), "MX", "NK" (Spirit Airlines), and others, but they contribute little to not to the overall flight volume, each having only a few hundred or fewer flights compared to the leading airlines. The graph illustrates a highly skewed distribution, with the majority of flights concentrated among a few dominant airlines, while the rest operate a small number of flights. This disparity reflects a competitive imbalance, suggesting that a handful of carriers hold a significant market share and likely benefit from higher consumer visibility and brand loyalty, while the smaller airlines might serve specialized routes or have limited operational capacity. The overall pattern highlights a clear disparity in airline operations in Boston, indicating a strong market presence for a few leading carriers while others maintain a minimal role.</p>
+            </div>
+            <!-- Chart 3 -->
+<div class="chart">
+    <div id="chart3-container"></div>
+</div>
+<div class="chart-description">
+    <p>This graph is a line plot that visualizes the average fares of various airlines over time, offering insights into pricing trends and patterns. The x-axis represents time data in a "Year-Quarter" format. This provides a chronological view of fare changes, with labels angled for reader clarity. The y-axis shows the average fare using ‘fare’ column data and the fluctuations and trends of fares across different time periods. Each line is color-coded to represent a specific carrier with a legend available to help identify airlines.
+        The chart includes an interactive element of a dropdown menu labeled "Carrier Options," enabling users to filter the line plot data and focus on a particular airline carrier’s fare line plot. This helps create a more detailed perspective of individual carrier pricing strategies. Overall, this visualization was built to examine pricing trends over time and compare carrier prices. 
+    </p>
+</div>
+            <!-- Chart 4 -->
+<div class="chart">
+    <div id="chart4-container"></div>
+</div>
+<div class="chart-description">
+    <p>This visualization provides two graphs on airline performance and passenger trends by combining a scatter plot and a bar chart with an interactive filter for city based analysis. The scatter plot highlights the relationship between the number of passengers  on the x-axis and the average fare  on the y-axis for various carriers in selected cities. Each carrier is color-coded for clear user readability. Tooltips provide additional details such as carrier names, fares, passenger counts, and market share percentages, offering users deeper insights into individual data points.</p>
+    <p>The accompanying bar chart complements the scatterplot by showcasing the average market share on the y-axis of carriers within the selected city and carriers on the x-axis. This enables users to evaluate how dominant each carrier is in terms of market share for a specific location while comparing their fares and passenger numbers in the scatter plot.</p>
+    <p>This visualization is relevant for understanding competitive dynamics in the airline industry. The interactive filter helps focus on specific cities and uncover tailored insights on carrier information.</p>
+</div>
+
+<!-- Chart 5 -->
+<div class="chart">
+    <div id="chart5-container"></div>
+</div>
+<div class="chart-description">
+    <p>This interactive visualization consists of two interlinked graphs: a scatter plot and a bar chart. They are designed to provide insights into airline operations based on miles traveled, passenger volume, and destination cities.</p>
+    <p>The scatter plot illustrates the relationship between flight miles traveled on the x-axis and the number of passengers on the y-axis, with the fare amount encoded as the color. The interactive selection tool allows users to highlight specific ranges in the scatter plot to then create the bar chart and relay respective information on the number of flights to each city by carrier.</p>
+    <p>The bar chart displays the number of flights to various destination cities and is categorized by carrier. The x-axis represents the destination cities, while the y-axis shows the total number of flights sorted in descending order for easier comparison. The bars are color-coded by carrier, providing insights into the distribution of flights across different airlines.
+        This visualization is relevant for analyzing fare strategies by miles traveled and popular destinations for each airline.
+    </p>
+</div>
+</div>
+            <!-- Chart 4 -->
+<div class="chart">
+    <div id="chart4-container"></div>
+</div>
+<div class="chart-description">
+    <p>This visualization provides two graphs on airline performance and passenger trends by combining a scatter plot and a bar chart with an interactive filter for city based analysis. The scatter plot highlights the relationship between the number of passengers  on the x-axis and the average fare  on the y-axis for various carriers in selected cities. Each carrier is color-coded for clear user readability. Tooltips provide additional details such as carrier names, fares, passenger counts, and market share percentages, offering users deeper insights into individual data points.</p>
+    <p>The accompanying bar chart complements the scatterplot by showcasing the average market share on the y-axis of carriers within the selected city and carriers on the x-axis. This enables users to evaluate how dominant each carrier is in terms of market share for a specific location while comparing their fares and passenger numbers in the scatter plot.</p>
+    <p>This visualization is relevant for understanding competitive dynamics in the airline industry. The interactive filter helps focus on specific cities and uncover tailored insights on carrier information.</p>
+</div>
+            <!-- Chart 6 -->
+<div class="chart">
+    <div id="chart6-container"></div>
+</div>
+<div class="chart-description">
+    <p>This static visualization is a bar chart depicting the number of flights by each carrier. The x-axis represents the carrier names, while the y-axis displays the count of flights, providing a clear numerical representation of each carrier's activity. The bars are color-coded by carrier to clarify and for easy differentiation. The chart is relevant for analyzing a carrier how active it has been. By visualizing the number of flights, we can see the operational scale one carrier and compare it to others to identify dominant players. </p>
+</div>
+<!-- Conclusion Section -->
+        <div class="conclusion">
+            <h2>Conclusion</h2>
+            <p>The COVID-19 pandemic negatively impacted flights departing from Boston,
+                 showing significant changes in passenger behavior and airline operations 
+                 from 2018 to 2023. This project focused on trends in passenger volume, 
+                 airfare, carrier dominance, and route popularity, offering insights into 
+                 the sudden change and subsequent recovery in the airline industry. Prior
+                  to the pandemic, flights to popular destinations like New York, Florida,
+                   and California consistently had numerous passengers. However, 2020-2021,
+                    there was a sharp decline in travel due to restrictions, with a slow 
+                    recovery starting in 2022 as travel continued.</p>
+            <p>Airfare trends reflected these sudden changes, with fares dropping during 
+                the pandemic due to reduced demand and rising again in 2022-2023 as
+                 the airline industry recovered as time went on. The study also 
+                 highlighted how major carriers maintained their dominance in the industry,
+                  while smaller airlines faced challenges. Long-distance routes recovered 
+                  more steadily compared to mid-distance or shorter routes, indicating 
+                  increased interest in long travel post-pandemic.</p>
+            <p>Overall, this project illustrates the ups and downs of the airline industry 
+                and provides a deeper understanding of how global events can reshape 
+                transportation networks. The findings emphasize the importance of 
+                flexibility and adaptation for airlines to navigate and avoid future 
+                disruptions and please consumer demands and trends. In the future, we would 
+                also like to look at flight cancellation and delay data so that we can build a 
+                model that predicts the probability of delays for specific routes. Regarding flight carriers,
+                we would like to look more at their financial data and what variables it potentially correlates to 
+                flight route and fare data. </p>
+        </div>
+        <div class="conclusion">
+            <h2>References:</h2>
+            
+            <p><a href="https://www.tandfonline.com/doi/full/10.1080/01441647.2023.2244165#abstract">Impact of COVID-19 on Air Travel</a></p>
+            <p><a href="https://www.sciencedirect.com/science/article/pii/S0969699722000151">Airline Industry - Macroeconomic Trends and Financial Operations of the Industry</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Chart 5 - Altair Scatter Plot and Bar Chart of Miles and Passengers
+            fetch('scatterplot_barchart_miles_passengers.json')
+                .then(response => response.json())
+                .then(spec => {
+                    vegaEmbed('#chart5-container', spec);
+                })
+                .catch(error => console.error('Error loading the Altair chart:', error));
+            
+            
+            
+            // Chart 4 - Altair Scatter Plot and Bar Chart of Fare, Passengers, and Market Share
+            fetch('scatter_bar_fare_by_passengers_by_ms.json')
+                .then(response => response.json())
+                .then(spec => {
+                    vegaEmbed('#chart4-container', spec);
+                })
+                .catch(error => console.error('Error loading the Altair chart:', error));
+            // Chart 3 - Altair Line Plot of Fares
+            fetch('lineplot_fares_years.json')
+                .then(response => response.json())
+                .then(spec => {
+                    vegaEmbed('#chart3-container', spec);
+                })
+                .catch(error => console.error('Error loading the Altair chart:', error));
+            // Chart 1
+            fetch('boston_flights_visualization.json')
+                .then(response => response.json())
+                .then(data => {
+                    Plotly.newPlot('chart-container', data.data, data.layout);
+                })
+                .catch(error => console.error('Error loading the chart:', error));
+
+            // Chart 2 D3 Code
+            d3.csv("boston_flights.csv").then(data => {
+            const filteredData = data.filter(d => d.carrier_lg && d.carrier_lg.trim() !== "");
+
+            const groupedData = Array.from(
+                d3.rollup(filteredData, v => v.length, d => d.carrier_lg),
+                ([carrier, count]) => ({ carrier, count })
+            );
+
+            const threshold = 50;
+            let otherCount = 0;
+            const processedData = groupedData.filter(d => {
+                if (d.count < threshold) {
+                    otherCount += d.count;
+                    return false;
+                }
+                return true;
+            });
+
+            if (otherCount > 0) {
+                processedData.push({ carrier: "Other", count: otherCount });
+            }
+
+            processedData.sort((a, b) => b.count - a.count);
+
+            const svgWidth = 800, svgHeight = 500;
+            const margin = { top: 20, right: 20, bottom: 70, left: 60 };
+            const width = svgWidth - margin.left - margin.right;
+            const height = svgHeight - margin.top - margin.bottom;
+
+            const svg = d3.select("#chart")
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const tooltip = d3.select("#tooltip");
+
+            const x = d3.scaleBand()
+                .domain(processedData.map(d => d.carrier))
+                .range([0, width])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(processedData, d => d.count)]).nice()
+                .range([height, 0]);
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "rotate(-45)")
+                .style("text-anchor", "end");
+
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + 50)
+                .attr("text-anchor", "middle")
+                .text("Airline Carriers");
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -45)
+                .attr("text-anchor", "middle")
+                .text("Number of Flights");
+
+            const minBarHeight = 5;
+
+            svg.selectAll(".bar")
+                .data(processedData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(d.carrier))
+                .attr("y", d => Math.min(y(d.count), height - minBarHeight))
+                .attr("width", x.bandwidth())
+                .attr("height", d => Math.max(height - y(d.count), minBarHeight))
+                .on("mouseover", (event, d) => {
+                    tooltip.style("visibility", "visible")
+                        .text(`Carrier: ${d.carrier}, Flights: ${d.count}`);
+                })
+                .on("mousemove", event => {
+                    tooltip.style("top", `${event.pageY - 20}px`)
+                        .style("left", `${event.pageX + 10}px`);
+                })
+                .on("mouseout", () => tooltip.style("visibility", "hidden"));
+        }).catch(error => console.error("Error loading data:", error));
+
+        // Chart 6 - Altair Bar Chart of Flights by Carrier
+            fetch('barchart_flights_carriers.json')
+                .then(response => response.json())
+                .then(spec => {
+                    vegaEmbed('#chart3-container', spec);
+                })
+                .catch(error => console.error('Error loading the Altair chart:', error));
+
+        
+
+        
+    </script>
+</body>
+</html>
